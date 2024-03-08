@@ -1,0 +1,90 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin</title>
+
+    <link rel="stylesheet" href="{% static "css/login.css" %}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.4.1/dist/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.5.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto">
+
+</head>
+<body>
+
+      
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-3 col-md-2"></div>
+            <div class="col-lg-6 col-md-8 login-box">
+               
+                <div class="col-lg-12 login-title">
+                    List of Databases
+                </div>
+
+                <div class="col-lg-12 login-form">
+                    <div class="col-lg-12 login-form">
+                        {% if data %}
+
+                        <form method="POST" action="{% url 'collections' %}">
+                            {% csrf_token %}
+
+
+                            {% for db in data %}
+                                
+                                <div class="col-lg-12 loginbttm">
+                                    <div class="col-lg-6 login-btm login-text">
+                                        <!-- Error Message -->
+                                    </div>
+                                    <div class=" login-btm login-button">
+                                        
+                                        <button type="submit" name="db_id" value="{{db.id}}" class="btn btn-outline-primary">{{db.name}}</button>
+                                    </div>
+                                </div>
+                                
+                            {% endfor %}
+
+                        </form>
+
+                        {% else %}
+                        <div class="col-lg-12 login-title">
+                            No Databases found ...
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-2"></div>
+            </div>
+        </div>
+    
+    </div>
+
+
+
+
+
+
+
+
+
+{% comment %} 
+    <u><h1>List of Databases</h1></u>
+
+    {% if data %}
+        <form method="POST" action="{% url 'collections' %}">
+            {% csrf_token %}
+
+            {% for db in data %}
+                <button type="submit" name="db_id" value="{{db.id}}">{{db.name}}</button>
+            {% endfor %}
+
+        </form>
+
+    {% else %}
+        <h3>No Databases found ...</h3>
+    {% endif %} {% endcomment %}
+    
+</body>
+</html>

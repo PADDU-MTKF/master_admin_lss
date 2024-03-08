@@ -79,16 +79,17 @@ def getAttribute(db_id,collection_id):
     return att_lists
     
 # print(getAttribute(db_id,collection_id))
-def getDocument(db_id,collection_id):
-    result = databases.list_documents(db_id, collection_id)
+def getDocument(db_id,collection_id,query=None):
+    result = databases.list_documents(db_id, collection_id,query)
     document=result['documents']
+    # print(document)
     doc_list=[]
     attr_lists=getAttribute(db_id,collection_id)
 
     for each_document in document:
         doc_id=each_document['$id']
         dic={}
-        dic['id']=db_id
+        dic['id']=doc_id
         
         for each in attr_lists:
             column_name=each["column_name"]
@@ -96,6 +97,15 @@ def getDocument(db_id,collection_id):
             dic[column_name]=value
         doc_list.append(dic)
         
-    return doc_list
+    return doc_list,attr_lists
 
-# print(getDocument(db_id,collection_id))
+
+def deleteDocument(db_id,collection_id,document_id):
+    try:
+        databases.delete_document(db_id, collection_id,document_id)
+        return True
+    except:
+        return False
+    
+    
+# deleteDocument("65e2d807b75e8ade83aa","65e2fd824f5c44283c76","65e5756c9255fd882005")
