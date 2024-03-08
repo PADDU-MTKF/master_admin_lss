@@ -31,8 +31,12 @@ def login(request):
         
         if data:
             if data[0]['isadmin']:
-                data={"data":db.getDatabases()}
-                return render(request,'home.html',data)
+                data={
+                        "db_id":os.getenv('DB_ID'),
+                        "data":db.getCollection(os.getenv('DB_ID'))
+                        }   
+                
+                return render(request,'collections.html',data)
 
             
             return HttpResponse("Non Admin page")
@@ -50,17 +54,17 @@ def login(request):
 
 
 
-def collections(request):
-    if request.method == 'POST':
-        db_id = request.POST.get('db_id')
-        data={
-            "db_id":db_id,
-            "data":db.getCollection(db_id)
-            }
+# def collections(request):
+#     if request.method == 'POST':
+#         db_id = request.POST.get('db_id')
+#         data={
+#             "db_id":db_id,
+#             "data":db.getCollection(db_id)
+#             }
         
-        return render(request,'collections.html',data)
-    else:
-        return redirect('login')
+#         return render(request,'collections.html',data)
+#     else:
+#         return redirect('login')
     
     
 def documents(request):
@@ -78,8 +82,16 @@ def documents(request):
         
         
         if 'new_data' in request.POST:
-            #add data to data base
-            pass
+            
+            post_keys = request.POST.keys()
+            attr_list = cache.get('attr_list_'+str(collection_id))
+            print(attr_list)
+            
+            data["attr_list"]=attr_list
+            
+            messages.error(request, 'Data Added Sucessfully')
+            #add data to data base        
+            return render(request,'docadd.html',data)
         
        
             
