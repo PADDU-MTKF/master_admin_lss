@@ -23,4 +23,5 @@ urlpatterns = [
     # path('collections', views.collections, name='collections'),
     path('documents', views.documents, name='documents'),
     path('login', views.login, name='login'),
+    path('file', views.file, name='file'),
 ]

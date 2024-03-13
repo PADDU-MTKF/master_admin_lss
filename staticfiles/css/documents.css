@@ -1,0 +1,82 @@
+
+.document-item {
+  border: 2px solid #404753;
+  margin-bottom: 10px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.document-item:hover{
+  box-shadow: rgb(17, 17, 26) 0px 4px 16px, rgb(17 17 26 / 36%) 0px 8px 24px, rgb(17 17 26 / 0%) 0px 16px 56px;
+
+}
+.master-info {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  /* cursor: pointer; */
+}
+
+.detail-info {
+  position: relative;
+  top: -24px;
+  left: 36px;
+  max-height: 25px;
+  overflow: hidden;
+  transition: max-height 0.3s ease-in-out; /* Adjust the transition property */
+}
+
+.detail-info.open {
+  
+  max-height: 500px; /* Adjust this value based on your content height */
+}
+
+.inForm {
+  width: 65%;
+  margin: 0 auto;
+}
+.heading {
+  width: fit-content;
+  margin: 0 auto;
+}
+.btn-ed {
+  background: #3067d7;
+  color: white;
+  padding: 6px 0;
+  width: 70px;
+  border: 2px solid #3068d700;
+  margin: 10px 0;
+  cursor: pointer;
+  border-radius: 5px;
+  font-size: 12px;
+}
+
+.btn-ed:hover {
+  background: none;
+  border: 2px solid #3067d7;
+}
+
+.flex {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 16px;
+  line-height: 22px;
+  color: #86d3ff;
+}
+
+
+.value {
+  font-weight: bolder;
+}
+
+
+@media (max-width: 665px) {
+
+  .heading{
+    margin:4em auto;
+  }
+
+  .inForm{
+    width:80%;
+  }
+}

@@ -1,0 +1,90 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lions Admin</title>
+    <link rel="stylesheet" href="{% static "css/base.css" %}">
+
+    {% block style %}{% endblock %}
+    {% block headScript %}{% endblock %}
+</head>
+<body>
+
+    {% for msg in messages %}
+    
+    <div class="message-box-alert" id="messageBox">
+      <p class="message-text">{{msg}}</p>
+    </div>
+
+    {% endfor %}
+
+
+    <div class="hamburger">
+        <div class="line"></div>
+        <div class="line"></div>
+        <div class="line"></div>
+    </div>
+  
+    <div class="container">
+        <h1 class="h1">Admin Panel</h1>
+        {% if collections %}
+        <form class="form" method="POST" action="{% url 'documents' %}">
+          {% csrf_token %}
+  
+          <input type="hidden" name="db_id" value="{{db_id}}" />
+  
+          {% for collection in collections %}
+  
+          <div class="col-lg-12 loginbttm">
+            <div class="col-lg-6 login-btm login-text">
+              <!-- Error Message -->
+            </div>
+            <div class="login-btm login-button">
+              <button
+                type="submit"
+                name="collection_id"
+                value="{{collection.id}}"
+                class="btn btn-outline-primary button cap {% if collection.id == collection_id %}col-active{% endif %}"
+              >
+                {{collection.name}}
+              </button>
+            </div>
+          </div>
+  
+          {% endfor %}
+        </form>
+  
+        {% else %}
+        <div class="col-lg-12 login-title">No Collections found ...</div>
+        {% endif %}
+    </div>
+
+    <div class="cont-right">
+    {% block mainContent %}{% endblock %}
+    </div>
+
+
+    <script src="{% static "script/script.js" %}"></script>
+
+    <script>
+        let isOpen = false;
+        const hamburg = document.querySelector(".hamburger");
+        const container = document.querySelector(".container");
+  
+        hamburg.addEventListener("click", () => {
+          if (!isOpen) {
+            container.style.transform = "translateX(0)";
+          } else {
+            container.style.transform = "translateX(-100%)";
+          }
+          isOpen = !isOpen;
+        });
+      </script>
+
+      {% block endScript %}{% endblock %}
+
+
+</body>
+</html>

@@ -10,7 +10,7 @@ body {
     height: auto;
     background: #1A2226;
     text-align: center;
-    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+    box-shadow: rgb(17, 17, 26) 0px 4px 16px, rgb(17 17 26 / 36%) 0px 8px 24px, rgb(17 17 26 / 0%) 0px 16px 56px;
 }
 
 .login-key {
