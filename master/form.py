@@ -13,19 +13,33 @@ class YourForm(forms.Form):
                 column_type = field_dict.get('column_type')
                 required = field_dict.get('required')
                 default = field_dict.get('default')
+                size = field_dict.get('size')
                 
             
               
-
-
-
-                if column_type == 'string':
+                is_image = 'image' in column_name.lower()
+                
+                if is_image:
+                    self.fields[column_name] = forms.ImageField(
+                        label=column_name,
+                        required=required,
+                        widget=forms.FileInput(attrs={'accept': 'image/*', 'class': 'form-control-file'})
+                    )
+                
+                elif column_type == 'string':
+                    if size>=20:
+                        widget = forms.Textarea(attrs={'class': 'form-control-area'})  # Use Textarea widget
+                    else:
+                        widget = forms.TextInput(attrs={'class': 'form-control'})  # Use TextInput widget
+        
+                        
                     self.fields[column_name] = forms.CharField(
                         label=column_name,
                         required=required,
                         initial=default,
-                        widget=forms.TextInput(attrs={'class': 'form-control'})
+                        widget=widget
                     )
+                    
                 elif column_type == 'integer':
                     self.fields[column_name] = forms.IntegerField(
                         label=column_name,

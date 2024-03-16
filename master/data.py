@@ -4,8 +4,6 @@ from appwrite.query import Query
 from appwrite.id import ID
 from appwrite.services.storage import Storage
 from appwrite.input_file import InputFile
-import io
-
 
 import os
 
@@ -16,6 +14,9 @@ try:
 except:
     pass
 
+
+
+# STORAGE_URL=f"https://cloud.appwrite.io/v1/storage/buckets/{os.getenv("STORAGE_ID")}/files/{FILE_ID}/view?project={os.getenv("PROJECT_ID")}"
 
 client = Client()
 
@@ -79,8 +80,11 @@ def getAttribute(db_id,collection_id):
         type=each_attribute["type"]
         required=each_attribute["required"]
         default=each_attribute["default"]
+        # print(each_attribute)
+        size=each_attribute["size"] if "size" in each_attribute else 0
      
-        dics={"column_name":name,"column_type":type,"required":required,"default":default} 
+        dics={"column_name":name,"column_type":type,"required":required,"default":default,"size":size} 
+       
         att_lists.append(dics)
         
     return att_lists
@@ -130,15 +134,27 @@ def addDocument(db_id,collection_id,data):
 
 
 
-def addStorage(storage_id,file):
-    file.seek(0)
-    c=file.read()
-    # print(c)
+def addStorage(storage_id,file,name):
+    try:
     
-    file_info = storage.create_file(storage_id,ID.unique(),InputFile.from_bytes(bytearray(c)))
-    print(file_info)
+        file.seek(0)
+        c=file.read()
         
-    # Get the file download URL from Appwrite response
-    file_url = file_info['$permissions']['read']
-    print(file_url)
-    
+        
+        file_info = storage.create_file(storage_id,ID.unique(),InputFile.from_bytes(c,name))
+        
+        
+        url=f"https://cloud.appwrite.io/v1/storage/buckets/{storage_id}/files/{file_info['$id']}/view?project={os.getenv('PROJECT_ID')}"
+        
+        return url
+    except:
+        return None
+
+
+def deleteStorage(storage_id,file_url):
+    try:
+        file_id=file_url.replace(f"https://cloud.appwrite.io/v1/storage/buckets/{storage_id}/files/","").replace(f"/view?project={os.getenv('PROJECT_ID')}","")
+        storage.delete_file(storage_id, file_id)   
+        return True
+    except:
+        return False

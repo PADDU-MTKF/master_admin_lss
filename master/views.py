@@ -6,6 +6,9 @@ from .form import YourForm
 from django import forms
 import datetime          
 import json
+from django.core.files.uploadedfile import InMemoryUploadedFile
+from PIL import Image
+import io
 
 from appwrite.query import Query
 
@@ -28,10 +31,25 @@ class DateTimeEncoder(json.JSONEncoder):
             return super().default(z)
 
 
-# Create your views here.
-# def home(request):
-#     data={"data":db.getDatabases()}
-#     return render(request,'home.html',data)
+
+
+
+def compress_image(uploaded_file):
+    img = Image.open(uploaded_file)
+    
+    # Compress the image (adjust the quality as needed)
+    img = img.convert('RGB')
+    img_io = io.BytesIO()
+    img.save(img_io, format='JPEG', quality=20)
+    img_io.seek(0)
+
+    # Create a new InMemoryUploadedFile object with the compressed image data
+    compressed_file = InMemoryUploadedFile(
+        img_io, None, uploaded_file.name, 'image/jpeg', img_io.tell(), None
+    )
+
+    return compressed_file
+
 
 
 
@@ -70,19 +88,6 @@ def login(request):
     
 
 
-
-# def collections(request):
-#     if request.method == 'POST':
-#         db_id = request.POST.get('db_id')
-#         data={
-#             "db_id":db_id,
-#             "data":db.getCollection(db_id)
-#             }
-        
-#         return render(request,'collections.html',data)
-#     else:
-#         return redirect('login')
-    
     
 def documents(request):
     if request.method == 'POST':
@@ -113,7 +118,7 @@ def documents(request):
       
             
             new_det={}
-            form = YourForm(attr_list=attr_list, data=request.POST)  
+            form = YourForm(attr_list=attr_list, data=request.POST, files=request.FILES)  
             if form.is_valid():
                 # Access other form fields dynamically
                 for field_name, field_value in form.cleaned_data.items():
@@ -132,6 +137,19 @@ def documents(request):
                             continue
                         except:
                              pass
+                    
+                    if "image" in field_name:
+                        try:
+                            uploaded_file = request.FILES[field_name]
+                            compressed_file = compress_image(uploaded_file)
+                            url=db.addStorage(os.getenv('STORAGE_ID'),compressed_file.file,uploaded_file.name)
+                            
+                            new_det[field_name.replace(" ","_")] =url
+                            continue
+                        except:
+                            pass
+
+                        
                   
                     new_det[field_name.replace(" ","_")] =field_value if field_value is not "" else None
             
@@ -172,7 +190,16 @@ def documents(request):
         if 'delete' in request.POST:
             doc_id = request.POST.get('delete')
             
-            res=db.deleteDocument(db_id,collection_id,doc_id)
+            key=f'img_{doc_id}[]'
+            img_list=request.POST.getlist(key)
+            
+            for each in img_list:
+                r=db.deleteStorage(os.getenv('STORAGE_ID'),each)
+                if not r:
+                    res=False
+                    break
+            else:
+                res=db.deleteDocument(db_id,collection_id,doc_id)
             
             if not res:
                 messages.error(request, 'Somthing went wrong ...')
@@ -200,14 +227,20 @@ def documents(request):
     
     
     
-def file(request):
-    if request.method == 'POST':
-        uploaded_file = request.FILES['upfile']
-        print(uploaded_file.file)
-        db.addStorage(os.getenv('STORAGE_ID'),uploaded_file.file)
-        return render(request,'file.html')
+# def file(request):
+#     if request.method == 'POST':
+#         try:
+#             uploaded_file = request.FILES['upfile']
+#             url=db.addStorage(os.getenv('STORAGE_ID'),uploaded_file.file,uploaded_file.name)
+#             if url:
+#                 return render(request,'file.html',{'url':url})
+#             else:
+#                 raise Exception
+#         except:
+#             return render(request,'file.html')
+            
 
         
         
-    else:
-        return render(request,'file.html')
+#     else:
+#         return render(request,'file.html')

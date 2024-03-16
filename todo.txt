@@ -1,0 +1,9 @@
+add lazythinkes in footer :)
+side panel tik se bita nahi hai ,content bada hua tho wo chota pad raha hai 
+add wala page mai file picker ko style karo
+
+
+
+delete karthe wakth image haitho use be delete karo
+edit featur ko liko
+include field size in the data and according to it convert the text box to text area in add form

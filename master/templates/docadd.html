@@ -29,7 +29,7 @@
             <div class="login-form">
 
 
-                <form method="post" action="{% url 'documents' %}">
+                <form method="post" action="{% url 'documents' %}" enctype="multipart/form-data">
                     {% csrf_token %}
                     <input type="hidden" name="db_id" value="{{db_id}}" />
                     <input type="hidden" name="collection_id" value="{{collection_id}}" />

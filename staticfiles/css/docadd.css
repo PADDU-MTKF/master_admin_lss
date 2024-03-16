@@ -36,7 +36,7 @@
     text-align: left;
 }
 
-input[type=text],input[type=number],input[type=datetime-local] {
+input[type=text],input[type=number],input[type=datetime-local],.form-control-area{
     background-color: #1A2226;
     font-weight: bold;
     outline: 0;
@@ -49,6 +49,11 @@ input[type=text],input[type=number],input[type=datetime-local] {
     color: #a3a6aa;
     border-radius: 12px;
 
+}
+
+.form-control-area{
+    width:400px;
+    resize:none;
 }
 
 input[type=password] {
@@ -223,8 +228,51 @@ label {
     transform: scale(.8);
 }
 
+.form-control-file{
+    margin-left: 4.5em;
+    /* background: #2a71c1; */
+    padding: 1.5em;
+    border-radius: 6px;
+    cursor: pointer;
+    width: 80px;
+    border: 2px solid #2a71c1;
+    margin-top: 5px;
+    margin-bottom: 14px;
+
+}
 
 
+.form-control-file input[type="file"] {
+    /* Hide the default file input */
+    display: none;
+}
+
+.form-control-file span::before {
+    /* Custom text */
+    content: "Select a file";
+}
+
+.form-control-file input[type="file"]:focus + span::before,
+.form-control-file input[type="file"]:valid + span::before {
+    /* Show custom text when input is focused or a file is selected */
+    content: attr(data-text);
+}
+
+.form-control-file input[type="file"] {
+    /* Required to hide the file input on Firefox */
+    position: absolute;
+}
+
+
+
+
+.form-control-file::-webkit-file-upload-button {
+    /* Remove the "No file chosen" text */
+    opacity: 0;
+    pointer-events: none;
+    display: none;
+  }
+  
 
 
 
@@ -253,7 +301,7 @@ label {
  
 }
 @media (max-width: 665px) {
-    input[type=text], input[type=number], input[type=datetime-local] {
+    input[type=text], input[type=number], input[type=datetime-local],.form-control-area {
         width: 300px;
     }
     .login-box{
