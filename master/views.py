@@ -168,7 +168,61 @@ def documents(request):
             #add data to data base        
             return render(request,'docadd.html',data)
         
-       
+        
+        
+        
+        if 'update_data' in request.POST:
+            
+        
+            attr_list = cache.get('attr_list_'+str(collection_id))
+            doc_id=request.POST.get('doc_id')
+      
+            
+            new_det={}
+            form = YourForm(attr_list=attr_list, data=request.POST, files=request.FILES)  
+            if form.is_valid():
+                # Access other form fields dynamically
+                for field_name, field_value in form.cleaned_data.items():
+                    
+                    if isinstance(form.fields[field_name], forms.DecimalField):
+                        new_det[field_name.replace(" ","_")] =float(field_value) if (field_value is not "" and field_value is not None) else 0.0
+                        continue
+                    
+                    if isinstance(form.fields[field_name], forms.DateTimeField):
+                        # This field is a DateField
+                        try:
+                            # Attempt to convert the field value to a datetime object
+                            raw=json.dumps(field_value,cls=DateTimeEncoder).replace('"',"").replace("'","")
+          
+                            new_det[field_name.replace(" ","_")] =raw if raw is not "null" else None
+                            continue
+                        except:
+                             pass
+                    
+                    if "image" in field_name:
+                        try:
+                            uploaded_file = request.FILES[field_name]
+                            compressed_file = compress_image(uploaded_file)
+                            url=db.addStorage(os.getenv('STORAGE_ID'),compressed_file.file,uploaded_file.name)
+                            
+                            new_det[field_name.replace(" ","_")] =url
+                            continue
+                        except:
+                            pass
+
+                        
+                  
+                    new_det[field_name.replace(" ","_")] =field_value if field_value is not "" else None
+            
+            else:
+                print(form.errors)
+            # print(new_det)
+            res=db.updateDocument(db_id,collection_id,doc_id,new_det)
+            if not res:
+                messages.error(request, 'Somthing went wrong ... Data is not added')
+            else:
+                messages.success(request, 'Data Updated Sucessfully')
+          
             
         if 'add' in request.POST:
             attr_list = cache.get('attr_list_'+str(collection_id))
@@ -208,10 +262,28 @@ def documents(request):
                 
         
         elif 'edit' in request.POST:
-            attr_list = request.POST.get('attr_list')
+            doc_id = request.POST.get('edit')
+            key=f"data_{doc_id}"
+            data_dict=request.POST.get(key)
+            data_dict=eval(data_dict)
+            attr_list = cache.get('attr_list_'+str(collection_id))
+            
+            
+            
+            if attr_list is None:
+                attr_list=db.getAttribute(db_id,collection_id)
+                cache.set('attr_list_'+str(collection_id), attr_list, timeout=None)  # Cache for 1 hour (adjust timeout as needed)
+                
+            form = YourForm(attr_list=attr_list,default_data=data_dict)
+            
             data["attr_list"]=attr_list
-            edit = request.POST.get('edit')
-            print("Edit :",attr_list)
+            
+            # print(attr_list)
+
+            data["form"] = form
+            data['doc_id']=doc_id
+            
+            return render(request,'docedit.html',data)
         
         
         

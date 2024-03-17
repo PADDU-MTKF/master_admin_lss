@@ -65,6 +65,7 @@
                       {% endif %}
                   {% endfor %}
                   <div>
+                      <input type="hidden" name="data_{{item.id}}" value="{{ item }}">
                       <button class="btn-ed" type="submit" name="edit" value="{{ item.id }}">Edit</button>
                       <button class="btn-ed" type="submit" name="delete" value="{{ item.id }}" onclick="return confirmDelete()">Delete</button>
                   </div>

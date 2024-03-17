@@ -2,7 +2,7 @@ from django import forms
 
 class YourForm(forms.Form):
 
-    def __init__(self, attr_list=None, *args, **kwargs):
+    def __init__(self, attr_list=None,default_data=None, *args, **kwargs):
         super(YourForm, self).__init__(*args, **kwargs)
         if attr_list:
         
@@ -12,8 +12,12 @@ class YourForm(forms.Form):
                 column_name = field_dict.get('column_name').replace('_', ' ')  # Access the dictionary using string keys
                 column_type = field_dict.get('column_type')
                 required = field_dict.get('required')
-                default = field_dict.get('default')
-                size = field_dict.get('size')
+                fld_size = field_dict.get('size') if field_dict.get('size')!=0 else None
+                default = default_data[column_name] if default_data else field_dict.get('default')
+                
+              
+                
+                
                 
             
               
@@ -27,7 +31,7 @@ class YourForm(forms.Form):
                     )
                 
                 elif column_type == 'string':
-                    if size>=20:
+                    if fld_size is not None and fld_size>=20:
                         widget = forms.Textarea(attrs={'class': 'form-control-area'})  # Use Textarea widget
                     else:
                         widget = forms.TextInput(attrs={'class': 'form-control'})  # Use TextInput widget
@@ -37,7 +41,8 @@ class YourForm(forms.Form):
                         label=column_name,
                         required=required,
                         initial=default,
-                        widget=widget
+                        widget=widget,
+                        max_length=fld_size
                     )
                     
                 elif column_type == 'integer':
@@ -96,3 +101,4 @@ class YourForm(forms.Form):
                         initial=default,
                         widget=forms.Textarea(attrs={'class': 'form-control'})
                     )
+

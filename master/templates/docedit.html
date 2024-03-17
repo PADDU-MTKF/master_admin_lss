@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block style %}
+
+    <link rel="stylesheet" href="{% static "css/docadd.css" %}">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.5.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto">
+
+    <!-- Include Bootstrap Datepicker CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css">
+
+
+
+   
+
+{% endblock %}
+
+{% block mainContent %}
+
+    
+  
+<div class="login-box">
+            <div class="login-title">
+                Edit Data
+            </div>
+            
+            <div class="login-form">
+
+
+                <form method="post" action="{% url 'documents' %}" enctype="multipart/form-data" onsubmit="handleSubmit(event)">
+                    {% csrf_token %}
+                    <input type="hidden" name="db_id" value="{{db_id}}" />
+                    <input type="hidden" name="collection_id" value="{{collection_id}}" />
+                    <input type="hidden" name="doc_id" value="{{doc_id}}" />
+
+                    <div class="form-group">
+                        {% for field in form %}
+                        
+                            <label for="{{ field.id_for_label }}" class="form-control-label cap">{{ field.label }} {% if not field.field.required %} (optional) {% endif %}</label>
+                            <br>
+                            {{ field }}
+                            <br>
+                        
+                        {% endfor %}
+                    </div>
+                   
+                    <div class="new-btn-div">
+                        <button type="submit" class="add-new-btn" name="update_data">Edit</button>
+                    </div>
+                    
+                </form>
+
+                
+
+            </div>
+            
+        </div>
+    
+    
+    
+
+{% endblock %}
+
+{% block endScript %}
+
+    <script>
+        // Function to remove escape sequences from a string
+        function removeEscapeSequences(inputString) {
+            return inputString.replace(/\\n/g, '')
+                            .replace(/\\t/g, '')
+                            .replace(/\\r/g, '');
+        }
+        
+        // Function to handle form submission
+        function handleSubmit(event) {
+           // event.preventDefault(); // Prevent the default form submission
+            
+            // Get all textareas with class 'form-control-area'
+            var textareas = document.querySelectorAll('.form-control-area');
+            
+            // Loop through each textarea
+            textareas.forEach(function(textarea) {
+                // Remove escape sequences from textarea value
+                var cleanedValue = removeEscapeSequences(textarea.value);
+                
+                // Assign cleaned value back to textarea
+                textarea.value = cleanedValue;
+            });
+            
+            // Submit the form programmatically
+           // event.target.submit();
+        }
+    </script>
+
+    <script src="{% static "script/script.js" %}"></script>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Include Bootstrap Datepicker JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
+    <!-- Initialize Bootstrap Datepicker -->
+    <script>
+        $(document).ready(function(){
+            $('.datepicker').datepicker({
+                format: 'yyyy-mm-dd',
+                autoclose: true
+            });
+        });
+    </script>
+
+{% endblock %}
+
+

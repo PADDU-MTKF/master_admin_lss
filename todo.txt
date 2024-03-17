@@ -4,6 +4,4 @@ add wala page mai file picker ko style karo
 
 
 
-delete karthe wakth image haitho use be delete karo
-edit featur ko liko
-include field size in the data and according to it convert the text box to text area in add form
+edit mai image wala problem solve karo

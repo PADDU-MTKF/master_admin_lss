@@ -132,7 +132,12 @@ def addDocument(db_id,collection_id,data):
     
 # deleteDocument("65e2d807b75e8ade83aa","65e2fd824f5c44283c76","65e5756c9255fd882005")
 
-
+def updateDocument(db_id,collection_id,document_id,data):
+    try:
+        databases.update_document(db_id, collection_id, document_id,data)
+        return True
+    except:
+        return False
 
 def addStorage(storage_id,file,name):
     try:
@@ -158,3 +163,5 @@ def deleteStorage(storage_id,file_url):
         return True
     except:
         return False
+
+
