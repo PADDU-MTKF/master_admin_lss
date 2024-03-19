@@ -21,6 +21,10 @@ document.addEventListener('DOMContentLoaded', function() {
             var detailInfo = this.querySelector('.detail-info');
 
             // Toggle the 'open' class to show/hide the detail info
+            detailInfo.scrollTo({
+                top: 0
+                 // Optional: smooth scrolling animation
+            });
             toggleDetailInfo(detailInfo);
 
             // Close other open detail infos
@@ -36,7 +40,12 @@ document.addEventListener('DOMContentLoaded', function() {
         var allDetailInfos = document.querySelectorAll('.detail-info');
         allDetailInfos.forEach(function(detailInfo) {
             if (detailInfo !== currentDetailInfo && detailInfo.classList.contains('open')) {
+                detailInfo.scrollTo({
+                    top: 0
+                    // Optional: smooth scrolling animation
+                });
                 detailInfo.classList.remove('open');
+
             }
         });
     }

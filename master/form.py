@@ -24,11 +24,22 @@ class YourForm(forms.Form):
                 is_image = 'image' in column_name.lower()
                 
                 if is_image:
-                    self.fields[column_name] = forms.ImageField(
-                        label=column_name,
-                        required=required,
-                        widget=forms.FileInput(attrs={'accept': 'image/*', 'class': 'form-control-file'})
-                    )
+                    if default:
+                        self.fields[column_name] = forms.ImageField(
+                            label=column_name,
+                            required=required,
+                            widget=forms.FileInput(attrs={'accept': 'image/*', 'class': 'form-control-file hide-picker'}),
+                            initial=default  # Initialize with the image URL if provided
+                        )
+                        
+                    else:
+                        id=column_name.replace(' ',"_")
+                        self.fields[column_name] = forms.ImageField(
+                            label=column_name,
+                            required=required,
+                            widget=forms.FileInput(attrs={'accept': 'image/*', 'class': 'form-control-file' ,'id':id})
+                        )
+                        
                 
                 elif column_type == 'string':
                     if fld_size is not None and fld_size>=20:
@@ -102,3 +113,20 @@ class YourForm(forms.Form):
                         widget=forms.Textarea(attrs={'class': 'form-control'})
                     )
 
+    def is_valid(self, exc=False):
+        if exc:
+            # Temporarily remove the 'required' attribute for image fields
+            for field_name, field in self.fields.items():
+                if isinstance(field, forms.ImageField):
+                    field.required = False
+
+        # Validate the form using Django's default is_valid method
+        valid = super().is_valid()
+
+        if exc:
+            # Restore the 'required' attribute for image fields
+            for field_name, field in self.fields.items():
+                if isinstance(field, forms.ImageField):
+                    field.required = True
+
+        return valid

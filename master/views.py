@@ -51,6 +51,20 @@ def compress_image(uploaded_file):
     return compressed_file
 
 
+def remove_old_img(data,field_name):
+    data=eval(data)
+    
+    
+    try:
+    
+        old_img_url=data[field_name]
+        r=db.deleteStorage(os.getenv('STORAGE_ID'),old_img_url)
+        if not r:
+            return False
+        return True
+    except:
+        return False
+
 
 
 def login(request):
@@ -180,7 +194,7 @@ def documents(request):
             
             new_det={}
             form = YourForm(attr_list=attr_list, data=request.POST, files=request.FILES)  
-            if form.is_valid():
+            if form.is_valid(exc=True):
                 # Access other form fields dynamically
                 for field_name, field_value in form.cleaned_data.items():
                     
@@ -201,13 +215,40 @@ def documents(request):
                     
                     if "image" in field_name:
                         try:
-                            uploaded_file = request.FILES[field_name]
-                            compressed_file = compress_image(uploaded_file)
-                            url=db.addStorage(os.getenv('STORAGE_ID'),compressed_file.file,uploaded_file.name)
+                            hid=f"old_{field_name}"
+                            try:
+                                uploaded_file = request.FILES[field_name]
                             
-                            new_det[field_name.replace(" ","_")] =url
-                            continue
+                            
+                                # print(uploaded_file);
+                                compressed_file = compress_image(uploaded_file)
+                                
+                                url=db.addStorage(os.getenv('STORAGE_ID'),compressed_file.file,uploaded_file.name)
+                                
+                                new_det[field_name.replace(" ","_")] =url
+                                
+                                if(hid not in request.POST):
+                                    remove_old_img(request.POST.get("data_dict"),field_name)
+                                    # print("function called")
+                                    
+                                    pass
+                                
+                                
+                                continue
+                            except:
+                                # print("hid check");
+                                
+                                
+                                if(hid in request.POST):
+                                    # print("retain old one");
+                                    continue
+                                else:
+                                    remove_old_img(request.POST.get("data_dict"),field_name)
+                                    # print("function called")
+                                    pass
+                        
                         except:
+                            # print("ffdfdfdfdfdf");
                             pass
 
                         
@@ -215,6 +256,7 @@ def documents(request):
                     new_det[field_name.replace(" ","_")] =field_value if field_value is not "" else None
             
             else:
+                # print("ggrgggrg")
                 print(form.errors)
             # print(new_det)
             res=db.updateDocument(db_id,collection_id,doc_id,new_det)
@@ -282,6 +324,7 @@ def documents(request):
 
             data["form"] = form
             data['doc_id']=doc_id
+            data['data_dict']=data_dict
             
             return render(request,'docedit.html',data)
         

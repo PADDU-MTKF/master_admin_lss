@@ -19,7 +19,8 @@
 .detail-info {
   position: relative;
   top: -24px;
-  left: 36px;
+  /* left: 36px; */
+  margin-left: 3em;
   max-height: 25px;
   overflow: hidden;
   transition: max-height 0.3s ease-in-out; /* Adjust the transition property */
@@ -28,6 +29,7 @@
 .detail-info.open {
   
   max-height: 500px; /* Adjust this value based on your content height */
+  overflow-y: scroll;
 }
 
 .inForm {

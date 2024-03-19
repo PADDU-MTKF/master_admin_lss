@@ -29,7 +29,7 @@
             <div class="login-form">
 
 
-                <form method="post" action="{% url 'documents' %}" enctype="multipart/form-data">
+                <form method="post" action="{% url 'documents' %}" enctype="multipart/form-data" onsubmit="handleSubmit(event)">
                     {% csrf_token %}
                     <input type="hidden" name="db_id" value="{{db_id}}" />
                     <input type="hidden" name="collection_id" value="{{collection_id}}" />
@@ -78,6 +78,27 @@
                 autoclose: true
             });
         });
+
+        // Function to handle form submission
+        function handleSubmit(event) {
+            // Get all textareas with class 'form-control-area'
+            var textareas = document.querySelectorAll('.form-control-area');
+            // Loop through each textarea
+            textareas.forEach(function(textarea) {
+                // Remove escape sequences from textarea value
+                var cleanedValue = removeEscapeSequences(textarea.value);
+                // Assign cleaned value back to textarea
+                textarea.value = cleanedValue;
+            });
+        }
+
+        // Function to remove escape sequences from a string
+        function removeEscapeSequences(inputString) {
+            return inputString.replace(/\\n/g, '')
+                .replace(/\\t/g, '')
+                .replace(/\\r/g, '');
+        }
+
     </script>
 
 {% endblock %}

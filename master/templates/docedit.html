@@ -2,100 +2,104 @@
 {% load static %}
 
 {% block style %}
-
     <link rel="stylesheet" href="{% static "css/docadd.css" %}">
-    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.5.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto">
-
     <!-- Include Bootstrap Datepicker CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css">
-
-
-
-   
-
 {% endblock %}
 
 {% block mainContent %}
-
-    
-  
 <div class="login-box">
-            <div class="login-title">
-                Edit Data
-            </div>
-            
-            <div class="login-form">
+    <div class="login-title">
+        Edit Data
+    </div>
+    <div class="login-form">
+        <form method="post" action="{% url 'documents' %}" enctype="multipart/form-data" onsubmit="handleSubmit(event)">
+            {% csrf_token %}
+            <input type="hidden" name="db_id" value="{{db_id}}" />
+            <input type="hidden" name="collection_id" value="{{collection_id}}" />
+            <input type="hidden" name="doc_id" value="{{doc_id}}" />
+            <input type="hidden" name="data_dict" value="{{data_dict}}" />
 
+            <div class="form-group">
+                {% for field in form %}
+                    <label for="{{ field.id_for_label }}" class="form-control-label cap">{{ field.label }} {% if not field.field.required %} (optional) {% endif %}</label>
+                    <br>
+                    {% if 'image' in field.name %}  
+                        <div class="img-cls-flex">
 
-                <form method="post" action="{% url 'documents' %}" enctype="multipart/form-data" onsubmit="handleSubmit(event)">
-                    {% csrf_token %}
-                    <input type="hidden" name="db_id" value="{{db_id}}" />
-                    <input type="hidden" name="collection_id" value="{{collection_id}}" />
-                    <input type="hidden" name="doc_id" value="{{doc_id}}" />
-
-                    <div class="form-group">
-                        {% for field in form %}
-                        
-                            <label for="{{ field.id_for_label }}" class="form-control-label cap">{{ field.label }} {% if not field.field.required %} (optional) {% endif %}</label>
-                            <br>
+                            {% if field.value %}
+                            <img src="{{ field.value }}" alt="Existing Image" class="small-round-img">
+                            <button type="button" class="clear-image-button form-control-file" id="img_{{ field.name }}">Clear</button>
+                            <input type="hidden" name="old_{{ field.name }}" id="old_{{ field.name }}" value="{% if not field.field.required %}false{% else %}true{% endif %}" />
+                            {% endif %}
                             {{ field }}
-                            <br>
-                        
-                        {% endfor %}
-                    </div>
-                   
-                    <div class="new-btn-div">
-                        <button type="submit" class="add-new-btn" name="update_data">Edit</button>
-                    </div>
-                    
-                </form>
-
-                
-
+                        </div>
+                    {% else %}
+                        {{ field }}
+                    {% endif %}
+                    <br>
+                {% endfor %}
             </div>
-            
-        </div>
-    
-    
-    
 
+            <div class="new-btn-div">
+                <button type="submit" class="add-new-btn" name="update_data">Edit</button>
+            </div>
+        </form>
+    </div>
+</div>
 {% endblock %}
 
 {% block endScript %}
-
     <script>
-        // Function to remove escape sequences from a string
-        function removeEscapeSequences(inputString) {
-            return inputString.replace(/\\n/g, '')
-                            .replace(/\\t/g, '')
-                            .replace(/\\r/g, '');
-        }
-        
         // Function to handle form submission
         function handleSubmit(event) {
-           // event.preventDefault(); // Prevent the default form submission
-            
             // Get all textareas with class 'form-control-area'
             var textareas = document.querySelectorAll('.form-control-area');
-            
             // Loop through each textarea
             textareas.forEach(function(textarea) {
                 // Remove escape sequences from textarea value
                 var cleanedValue = removeEscapeSequences(textarea.value);
-                
                 // Assign cleaned value back to textarea
                 textarea.value = cleanedValue;
             });
-            
-            // Submit the form programmatically
-           // event.target.submit();
         }
+
+        // Function to remove escape sequences from a string
+        function removeEscapeSequences(inputString) {
+            return inputString.replace(/\\n/g, '')
+                .replace(/\\t/g, '')
+                .replace(/\\r/g, '');
+        }
+
+        // Add event listener to clear image button
+        document.querySelectorAll('.clear-image-button').forEach(function(button) {
+            button.addEventListener('click', function() {
+
+                var Id = button.id.replace('img_', '');
+                var fileInput = document.getElementById("id_"+Id);
+                var hid=document.getElementById("old_"+Id);
+                
+                
+                fileInput.value = '';
+                
+                if(hid.value=='true'){
+                    console.log(hid.value);
+                    fileInput.required = true;
+                }
+
+                fileInput.classList.remove('hide-picker');
+                
+                // Remove the image and the clear button
+                button.previousElementSibling.remove(); // Remove the image
+                hid.remove();
+                button.remove(); // Remove the clear button
+            });
+        });
     </script>
 
     <script src="{% static "script/script.js" %}"></script>
-
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Include Bootstrap Datepicker JS -->
@@ -109,7 +113,4 @@
             });
         });
     </script>
-
 {% endblock %}
-
-
