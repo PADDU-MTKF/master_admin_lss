@@ -51,10 +51,10 @@
               <div class="detail-info">
                   {% for title, value in item.items %}
                       {% if title != "id" %}
-                      <div class="flex {% if "image" in title and value is not None  %} col {% endif %}">
+                      <div class="flex {% if "Image" in title  and value is not None  %} col {% endif %}">
                         <div class="cap">{{ title }}</div> 
                         <div class="value">
-                          {% if "image" in title and value is not None %}
+                          {% if "Image" in title and value is not None %}
                               <img src="{{ value }}" alt="{{title}}" class="small-round-img" > 
                               <input type="hidden" name="img_{{item.id}}[]" value="{{ value }}">
                           {% else %}

@@ -26,7 +26,7 @@
                 {% for field in form %}
                     <label for="{{ field.id_for_label }}" class="form-control-label cap">{{ field.label }} {% if not field.field.required %} (optional) {% endif %}</label>
                     <br>
-                    {% if 'image' in field.name %}  
+                    {% if 'Image' in field.name %}  
                         <div class="img-cls-flex">
 
                             {% if field.value %}
