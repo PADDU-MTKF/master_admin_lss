@@ -1,4 +1,5 @@
 from django.shortcuts import redirect, render,HttpResponse
+import requests
 from . import data as db
 from django.core.cache import cache
 from django.contrib import messages
@@ -32,6 +33,12 @@ class DateTimeEncoder(json.JSONEncoder):
 
 
 
+def updateSite():
+    try:
+        requests.get(os.getenv("MAIN_SITE"))
+        print("done")
+    except:
+        print("Failed to get site")
 
 
 def compress_image(uploaded_file):
@@ -152,7 +159,7 @@ def documents(request):
                         except:
                              pass
                     
-                    if "image" in field_name:
+                    if "image" in field_name or "Image" in field_name:
                         try:
                             uploaded_file = request.FILES[field_name]
                             compressed_file = compress_image(uploaded_file)
@@ -167,13 +174,15 @@ def documents(request):
                   
                     new_det[field_name.replace(" ","_")] =field_value if field_value is not "" else None
             
-
+            
             # print(new_det)
             res=db.addDocument(db_id,collection_id,new_det)
             if not res:
                 messages.error(request, 'Somthing went wrong ... Data is not added')
             else:
                 messages.success(request, 'Data Added Sucessfully')
+            
+            updateSite()
                 
             data["attr_list"]=attr_list
             form = YourForm(attr_list=attr_list)
@@ -213,7 +222,7 @@ def documents(request):
                         except:
                              pass
                     
-                    if "image" in field_name:
+                    if "image" in field_name or "Image" in field_name:
                         try:
                             hid=f"old_{field_name}"
                             try:
@@ -264,6 +273,8 @@ def documents(request):
                 messages.error(request, 'Somthing went wrong ... Data is not added')
             else:
                 messages.success(request, 'Data Updated Sucessfully')
+            
+            updateSite()
           
             
         if 'add' in request.POST:
@@ -301,6 +312,8 @@ def documents(request):
                 messages.error(request, 'Somthing went wrong ...')
             else:
                 messages.success(request, 'Data Deleted Sucessfully')
+                
+            updateSite()
                 
         
         elif 'edit' in request.POST:
