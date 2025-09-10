@@ -32,10 +32,32 @@ class DateTimeEncoder(json.JSONEncoder):
             return super().default(z)
 
 
+def update_cache(cache_key, db_id, doc_id, queries=None):
+    """Update the cache with a new document."""
+    document, _ = db.getDocument(db_id, doc_id, queries)
+    cache.set(cache_key, document,timeout=None)
+    return document
+
+def refresh_cache():
+    # Refresh each cache entry
+    
+    # update_cache("address_data", os.getenv("DB_ID"), os.getenv("ADDRESS_ID"))
+    # update_cache("intro_data", os.getenv("DB_ID"), os.getenv("INTRO_ID"))
+    # update_cache("services_data", os.getenv("DB_ID"), os.getenv("SERVICES_ID"))
+    # update_cache("reviews_data", os.getenv("DB_ID"), os.getenv("REVIEWS_ID"))
+    
+    # update_cache("album_images", os.getenv("DB_ID"), os.getenv("ALBUM_ID"), [Query.equal("isVideo", [False]), Query.limit(6), Query.order_desc("$createdAt")])
+   
+
+    return HttpResponse("Cache refreshed successfully.")
+
+
+
+
 
 def updateSite():
     try:
-        requests.get(os.getenv("MAIN_SITE"))
+        refresh_cache()
         print("done")
     except:
         print("Failed to get site")
