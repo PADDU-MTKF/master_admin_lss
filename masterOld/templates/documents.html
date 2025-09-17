@@ -1,4 +1,4 @@
-{% extends "adminBase.html" %}
+{% extends "base.html" %}
 {% load static %}
 
 {% block style %}
@@ -73,17 +73,6 @@
           </div>
           {% endfor %}
       </div>
-
-      <div id="loading" style="display:none; text-align:center; margin:10px;">
-      <span>Loading...</span>
-      </div>
-      <div id="all-fetched" style="display:none; text-align:center; margin:10px;">
-          <span>All data fetched</span>
-      </div>
-      <button id="load-more-btn" type="button" class="btn-ed" style="display:block; margin:15px auto;">
-          Load More
-      </button>
-
       {% else %}
       <br>
       <br>
@@ -103,6 +92,5 @@
 
 {% block endScript %}
   <script src="{% static "js/admin/drop.js" %}"></script>
-  <script src="{% static "js/admin/getBatchData.js" %}"></script>
 
 {% endblock %}

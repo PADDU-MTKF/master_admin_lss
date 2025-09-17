@@ -24,4 +24,6 @@ urlpatterns = [
     path('documents', views.documents, name='documents'),
     path('login', views.login, name='login'),
     # path('file', views.file, name='file'),
+    
+    path("/get-documents-batch/", views.get_documents_batch, name="get_documents_batch"),
 ]

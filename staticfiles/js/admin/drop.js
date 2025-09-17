@@ -1,55 +1,34 @@
-document.addEventListener('DOMContentLoaded', function() {
-    var masterInfos = document.querySelectorAll('.master-info');
-    var detailInfos = document.querySelectorAll('.detail-info');
-    var doc = document.querySelectorAll('.document-item');
-
-    // masterInfos.forEach(function(masterInfo) {
-    //     masterInfo.addEventListener('click', function() {
-    //         var detailInfo = this.nextElementSibling;
-
-    //         // Toggle the 'open' class to show/hide the detail info
-    //         toggleDetailInfo(detailInfo);
-
-    //         // Close other open detail infos
-    //         closeOtherDetailInfos(detailInfo);
-    //     });
-    // });
-
-    doc.forEach(function(detailInfo) {
-        detailInfo.addEventListener('click', function() {
-            // console.log("clickek")
-            var detailInfo = this.querySelector('.detail-info');
-
-            // Toggle the 'open' class to show/hide the detail info
-            detailInfo.scrollTo({
-                top: 0
-                 // Optional: smooth scrolling animation
-            });
-            toggleDetailInfo(detailInfo);
-
-            // Close other open detail infos
-            closeOtherDetailInfos(detailInfo);
-        });
-    });
-
+document.addEventListener('DOMContentLoaded', function () {
     function toggleDetailInfo(detailInfo) {
         detailInfo.classList.toggle('open');
     }
 
     function closeOtherDetailInfos(currentDetailInfo) {
-        var allDetailInfos = document.querySelectorAll('.detail-info');
-        allDetailInfos.forEach(function(detailInfo) {
+        const allDetailInfos = document.querySelectorAll('.detail-info');
+        allDetailInfos.forEach(function (detailInfo) {
             if (detailInfo !== currentDetailInfo && detailInfo.classList.contains('open')) {
-                detailInfo.scrollTo({
-                    top: 0
-                    // Optional: smooth scrolling animation
-                });
+                detailInfo.scrollTo({ top: 0 });
                 detailInfo.classList.remove('open');
-
             }
         });
     }
+
+    // reusable handler for new and old items
+    function documentItemClickHandler() {
+        const detailInfo = this.querySelector('.detail-info');
+        if (!detailInfo) return;
+
+        detailInfo.scrollTo({ top: 0 });
+        toggleDetailInfo(detailInfo);
+        closeOtherDetailInfos(detailInfo);
+    }
+
+    // Attach to existing .document-item
+    const docItems = document.querySelectorAll('.document-item');
+    docItems.forEach(doc => {
+        doc.addEventListener('click', documentItemClickHandler);
+    });
+
+    // Expose handler for getBatchData.js
+    window.documentItemClickHandler = documentItemClickHandler;
 });
-
-
-

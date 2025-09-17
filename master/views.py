@@ -1,396 +1,284 @@
-from django.shortcuts import redirect, render,HttpResponse
-import requests
-from . import data as db
-from django.core.cache import cache
-from django.contrib import messages
-from .form import YourForm
-from django import forms
-import datetime          
-import json
-from django.core.files.uploadedfile import InMemoryUploadedFile
-from PIL import Image
-import io
-
-from appwrite.query import Query
-
 import os
+import ast
+from django.shortcuts import render, redirect, HttpResponse
+from django.contrib import messages
+from django.core.cache import cache
+from appwrite.query import Query
+from . import data as db
+from .form import YourForm
+from .utils import clean_form_data, updateSite, generate_token
 
-try:
-    from dotenv import load_dotenv
-    load_dotenv()
-except:
-    pass
-
-
-
-
-class DateTimeEncoder(json.JSONEncoder):
-    def default(self, z):
-        if isinstance(z, datetime.datetime):
-            return (str(z))
-        else:
-            return super().default(z)
-
-
-def update_cache(cache_key, db_id, doc_id, queries=None):
-    """Update the cache with a new document."""
-    document, _ = db.getDocument(db_id, doc_id, queries)
-    cache.set(cache_key, document,timeout=None)
-    return document
-
-def refresh_cache():
-    # Refresh each cache entry
-    
-    # update_cache("address_data", os.getenv("DB_ID"), os.getenv("ADDRESS_ID"))
-    # update_cache("intro_data", os.getenv("DB_ID"), os.getenv("INTRO_ID"))
-    # update_cache("services_data", os.getenv("DB_ID"), os.getenv("SERVICES_ID"))
-    # update_cache("reviews_data", os.getenv("DB_ID"), os.getenv("REVIEWS_ID"))
-    
-    # update_cache("album_images", os.getenv("DB_ID"), os.getenv("ALBUM_ID"), [Query.equal("isVideo", [False]), Query.limit(6), Query.order_desc("$createdAt")])
-   
-
-    return HttpResponse("Cache refreshed successfully.")
+from django.views.decorators.http import require_GET
+from django.http import JsonResponse
 
 
 
+# from .utils import compress_image, remove_old_img
+limit=15
 
 
-def updateSite():
-    try:
-        refresh_cache()
-        print("done")
-    except:
-        print("Failed to get site")
+def validate_session(request):
+    """
+    Check if session is valid:
+    - User is logged in
+    - Token matches cache
+    """
+    username = request.session.get('username')
+    token = request.session.get('token')
 
-
-def compress_image(uploaded_file):
-    img = Image.open(uploaded_file)
-    
-    # Compress the image (adjust the quality as needed)
-    img = img.convert('RGB')
-    img_io = io.BytesIO()
-    img.save(img_io, format='JPEG', quality=20)
-    img_io.seek(0)
-
-    # Create a new InMemoryUploadedFile object with the compressed image data
-    compressed_file = InMemoryUploadedFile(
-        img_io, None, uploaded_file.name, 'image/jpeg', img_io.tell(), None
-    )
-
-    return compressed_file
-
-
-def remove_old_img(data,field_name):
-    data=eval(data)
-    
-    
-    try:
-    
-        old_img_url=data[field_name]
-        r=db.deleteStorage(os.getenv('STORAGE_ID'),old_img_url)
-        if not r:
-            return False
-        return True
-    except:
+    if not username or not token:
         return False
 
+    active_token = cache.get(f"user_token_{username}")
+    if not active_token or active_token != token:
+        return False
+
+    return True
 
 
 def login(request):
-    if(request.method == 'POST'):
-        username=request.POST.get("username")
-        pswd=request.POST.get("password")
-        
-        data,_=db.getDocument(os.getenv('DB_ID'),os.getenv('LOGIN_ID'),[Query.equal("username", [username]), Query.equal("password", [pswd])])
-        # print(data)    
-        
-        if data:
-            if data[0]['isadmin']:
-                col=db.getCollection(os.getenv('DB_ID'))
-                data={
-                        "db_id":os.getenv('DB_ID'),
-                        "collections":col
-                        }
-                
-                cache.set('collections', col, timeout=None)  # Cache for 1 hour (adjust timeout as needed)   
-                
-                return render(request,'collections.html',data)
-
-            
-            return HttpResponse("Non Admin page")
-        
-        messages.error(request, 'Login Failed ! Please Check your credentials...')
-        return redirect('login')
-        
-            
-        
-        #check if the user name and password are in the database and is correct
-        #if not correct then render the error message else move to next page
-        
-    return render(request,'login.html')
+    """
+    User login.
+    - Stores `user` and `is_admin` in session.
+    - Redirects admin to collections dashboard.
+    """
     
-
-
-    
-def documents(request):
-    if request.method == 'POST':
-        db_id = request.POST.get('db_id')
-        collection_id = request.POST.get('collection_id')
+    if validate_session(request):
         col = cache.get('collections')
-        
-        if col is None:
-            col=db.getCollection(os.getenv('DB_ID'))
-            cache.set('collections',col,None)
-        
+        if not col:
+            col = db.getCollection(os.getenv('DB_ID'))
+            cache.set('collections', col, timeout=None)
+        return render(request, 'collections.html', {
+            "db_id": os.getenv('DB_ID'),
+            "collections": col
+        })
+    
+    if request.method == 'POST':
+        username = request.POST.get("username")
+        pswd = request.POST.get("password")
 
-        
-        
-        
-        data={
-            "db_id":db_id,
-            "collection_id": collection_id,
-            "collections":col
-            }
-        
-        
-        if 'new_data' in request.POST:
-            
-            
-        
-            attr_list = cache.get('attr_list_'+str(collection_id))
-      
-            
-            new_det={}
-            form = YourForm(attr_list=attr_list, data=request.POST, files=request.FILES)  
-            if form.is_valid():
-                # Access other form fields dynamically
-                for field_name, field_value in form.cleaned_data.items():
-                    
-                    if isinstance(form.fields[field_name], forms.DecimalField):
-                        new_det[field_name.replace(" ","_")] =float(field_value) if (field_value is not "" and field_value is not None) else 0.0
-                        continue
-                    
-                    if isinstance(form.fields[field_name], forms.DateTimeField):
-                        # This field is a DateField
-                        try:
-                            # Attempt to convert the field value to a datetime object
-                            raw=json.dumps(field_value,cls=DateTimeEncoder).replace('"',"").replace("'","")
-          
-                            new_det[field_name.replace(" ","_")] =raw if raw is not "null" else None
-                            continue
-                        except:
-                             pass
-                    
-                    if "image" in field_name or "Image" in field_name:
-                        try:
-                            uploaded_file = request.FILES[field_name]
-                            compressed_file = compress_image(uploaded_file)
-                            url=db.addStorage(os.getenv('STORAGE_ID'),compressed_file.file,uploaded_file.name)
-                            
-                            new_det[field_name.replace(" ","_")] =url
-                            continue
-                        except:
-                            pass
+        data, _ = db.getDocument(
+            os.getenv('DB_ID'),
+            os.getenv('LOGIN_ID'),
+            [Query.equal("username", [username]), Query.equal("password", [pswd])]
+        )
 
-                        
-                  
-                    new_det[field_name.replace(" ","_")] =field_value if field_value is not "" else None
-            
-            
-            # print(new_det)
-            res=db.addDocument(db_id,collection_id,new_det)
-            if not res:
-                messages.error(request, 'Somthing went wrong ... Data is not added')
-            else:
-                messages.success(request, 'Data Added Sucessfully')
-            
-            updateSite()
-                
-            data["attr_list"]=attr_list
-            form = YourForm(attr_list=attr_list)
-            data["form"] = form
-            
-            #add data to data base        
-            return render(request,'docadd.html',data)
-        
-        
-        
-        
-        if 'update_data' in request.POST:
-            
-        
-            attr_list = cache.get('attr_list_'+str(collection_id))
-            doc_id=request.POST.get('doc_id')
-      
-            
-            new_det={}
-            form = YourForm(attr_list=attr_list, data=request.POST, files=request.FILES)  
-            if form.is_valid(exc=True):
-                # Access other form fields dynamically
-                for field_name, field_value in form.cleaned_data.items():
-                    
-                    if isinstance(form.fields[field_name], forms.DecimalField):
-                        new_det[field_name.replace(" ","_")] =float(field_value) if (field_value is not "" and field_value is not None) else 0.0
-                        continue
-                    
-                    if isinstance(form.fields[field_name], forms.DateTimeField):
-                        # This field is a DateField
-                        try:
-                            # Attempt to convert the field value to a datetime object
-                            raw=json.dumps(field_value,cls=DateTimeEncoder).replace('"',"").replace("'","")
-          
-                            new_det[field_name.replace(" ","_")] =raw if raw is not "null" else None
-                            continue
-                        except:
-                             pass
-                    
-                    if "image" in field_name or "Image" in field_name:
-                        try:
-                            hid=f"old_{field_name}"
-                            try:
-                                uploaded_file = request.FILES[field_name]
-                            
-                            
-                                # print(uploaded_file);
-                                compressed_file = compress_image(uploaded_file)
-                                
-                                url=db.addStorage(os.getenv('STORAGE_ID'),compressed_file.file,uploaded_file.name)
-                                
-                                new_det[field_name.replace(" ","_")] =url
-                                
-                                if(hid not in request.POST):
-                                    remove_old_img(request.POST.get("data_dict"),field_name)
-                                    # print("function called")
-                                    
-                                    pass
-                                
-                                
-                                continue
-                            except:
-                                # print("hid check");
-                                
-                                
-                                if(hid in request.POST):
-                                    # print("retain old one");
-                                    continue
-                                else:
-                                    remove_old_img(request.POST.get("data_dict"),field_name)
-                                    # print("function called")
-                                    pass
-                        
-                        except:
-                            # print("ffdfdfdfdfdf");
-                            pass
+        if data:
+             # Generate a new token for this login
+            token = generate_token()
+            request.session['username'] = username
+            request.session['token'] = token
+            request.session['is_admin'] = data[0].get("isadmin", False)
+            request.session.set_expiry(3600)  # 1 hour expiry
 
-                        
-                  
-                    new_det[field_name.replace(" ","_")] =field_value if field_value is not "" else None
+            # Store active token in cache to enforce single session
+            cache.set(f"user_token_{username}", token, timeout=3600)
             
-            else:
-                # print("ggrgggrg")
-                print(form.errors)
-            # print(new_det)
-            res=db.updateDocument(db_id,collection_id,doc_id,new_det)
-            if not res:
-                messages.error(request, 'Somthing went wrong ... Data is not added')
-            else:
-                messages.success(request, 'Data Updated Sucessfully')
-            
-            updateSite()
-          
-            
-        if 'add' in request.POST:
-            attr_list = cache.get('attr_list_'+str(collection_id))
-            
-            
-            if attr_list is None:
-                attr_list=db.getAttribute(db_id,collection_id)
-                cache.set('attr_list_'+str(collection_id), attr_list, timeout=None)  # Cache for 1 hour (adjust timeout as needed)
-            
-            data["attr_list"]=attr_list
-            
-            # print(attr_list)
-            
-            form = YourForm(attr_list=attr_list)
-            data["form"] = form
-            
-            return render(request,'docadd.html',data)
-        
-        if 'delete' in request.POST:
-            doc_id = request.POST.get('delete')
-            
-            key=f'img_{doc_id}[]'
-            img_list=request.POST.getlist(key)
-            
-            for each in img_list:
-                r=db.deleteStorage(os.getenv('STORAGE_ID'),each)
-                if not r:
-                    res=False
-                    break
-            else:
-                res=db.deleteDocument(db_id,collection_id,doc_id)
-            
-            if not res:
-                messages.error(request, 'Somthing went wrong ...')
-            else:
-                messages.success(request, 'Data Deleted Sucessfully')
-                
-            updateSite()
-                
-        
-        elif 'edit' in request.POST:
-            doc_id = request.POST.get('edit')
-            key=f"data_{doc_id}"
-            data_dict=request.POST.get(key)
-            data_dict=eval(data_dict)
-            attr_list = cache.get('attr_list_'+str(collection_id))
-            
-            
-            
-            if attr_list is None:
-                attr_list=db.getAttribute(db_id,collection_id)
-                cache.set('attr_list_'+str(collection_id), attr_list, timeout=None)  # Cache for 1 hour (adjust timeout as needed)
-                
-            form = YourForm(attr_list=attr_list,default_data=data_dict)
-            
-            data["attr_list"]=attr_list
-            
-            # print(attr_list)
+            if data[0].get('isadmin'):
+                col = db.getCollection(os.getenv('DB_ID'))
+                cache.set('collections', col, timeout=None)
+                return render(request, 'collections.html', {
+                    "db_id": os.getenv('DB_ID'),
+                    "collections": col
+                })
+            return HttpResponse("Non Admin page")
 
-            data["form"] = form
-            data['doc_id']=doc_id
-            data['data_dict']=data_dict
-            
-            return render(request,'docedit.html',data)
-        
-        
-        
+        messages.error(request, 'Login Failed! Please check your credentials...')
+        return redirect('login')
 
-                
-        data['data'],attr_list=db.getDocument(db_id,collection_id)
-        cache.set('attr_list'+str(collection_id), attr_list, timeout=None) 
-            
-            
-        return render(request,'documents.html',data)
-    else:
+    return render(request, 'login.html')
+
+
+
+@require_GET
+def get_documents_batch(request):
+    """Return a batch of documents with caching."""
+    
+    batch={}
+    
+    if not validate_session(request):
+        messages.error(request, 'Session expired or invalid. Please login.')
+        batch["sessionExp"]=True
+        batch["data"]=[]
+        
+        return JsonResponse(batch)
+   
+    
+    db_id = request.GET.get('db_id')
+    collection_id = request.GET.get('collection_id')
+
+    try:
+        offset = int(request.GET.get("offset", 0))
+         
+    except ValueError:
+        offset = 0
+
+    cache_key = f"documents_batch_{offset}_{limit}"
+    batch = cache.get(cache_key)
+
+    if not batch:
+        batch={}
+        batch["sessionExp"]=False
+        # Query Appwrite DB
+        queries = [
+            Query.limit(limit),
+            Query.offset(offset),
+            Query.order_desc("$createdAt"),
+        ]
+       
+        batch['data'], attr_list = db.getDocument(db_id, collection_id,queries)
+        cache.set(f'attr_list_{collection_id}', attr_list, None)
+        # cache.set(cache_key, batch, timeout=None)
+        # print(batch)
+
+    return JsonResponse(batch)
+
+
+def documents(request):
+    """
+    Handles CRUD for documents.
+    - Add, update, delete, edit
+    - Optional image handling (commented example inside)
+    """
+    if not validate_session(request):
+        messages.error(request, 'Session expired or invalid. Please login.')
         return redirect('login')
     
-    
-    
-# def file(request):
-#     if request.method == 'POST':
-#         try:
-#             uploaded_file = request.FILES['upfile']
-#             url=db.addStorage(os.getenv('STORAGE_ID'),uploaded_file.file,uploaded_file.name)
-#             if url:
-#                 return render(request,'file.html',{'url':url})
-#             else:
-#                 raise Exception
-#         except:
-#             return render(request,'file.html')
-            
+    if request.method != 'POST':
+        return redirect('login')
 
-        
-        
-#     else:
-#         return render(request,'file.html')
+    db_id = request.POST.get('db_id')
+    collection_id = request.POST.get('collection_id')
+
+    col = cache.get('collections') or db.getCollection(os.getenv('DB_ID'))
+    cache.set('collections', col, None)
+    data = {"db_id": db_id, "collection_id": collection_id, "collections": col}
+
+    # --- Add new ---
+    if 'new_data' in request.POST:
+        attr_list = cache.get(f'attr_list_{collection_id}')
+        form = YourForm(attr_list=attr_list, data=request.POST, files=request.FILES)
+        if form.is_valid():
+            new_det = clean_form_data(form)
+
+            # Example for image field (uncomment if needed)
+            """
+            for field_name in request.FILES:
+                uploaded_file = request.FILES[field_name]
+                compressed = compress_image(uploaded_file, quality=60)
+                url = db.addStorage(os.getenv('STORAGE_ID'), compressed.file, compressed.name)
+                new_det[field_name] = url
+            """
+
+            res = db.addDocument(db_id, collection_id, new_det)
+            messages.success(request, 'Data Added Successfully' if res else 'Something went wrong...')
+            updateSite()
+        else:
+            messages.error(request, 'Invalid form submission')
+        data["attr_list"] = attr_list
+        data["form"] = YourForm(attr_list=attr_list)
+        return render(request, 'docadd.html', data)
+
+    # --- Update ---
+    if 'update_data' in request.POST:
+        doc_id = request.POST.get('doc_id')
+        attr_list = cache.get(f'attr_list_{collection_id}')
+        form = YourForm(attr_list=attr_list, data=request.POST, files=request.FILES)
+        if form.is_valid():
+            new_det = clean_form_data(form)
+
+            # Example for image update (uncomment if needed)
+            """
+            for field_name in request.FILES:
+                uploaded_file = request.FILES[field_name]
+                compressed = compress_image(uploaded_file, quality=60)
+                url = db.addStorage(os.getenv('STORAGE_ID'), compressed.file, compressed.name)
+                new_det[field_name] = url
+                # Remove old file if replaced
+                remove_old_img(request.POST.get("data_dict"), field_name)
+            """
+
+            res = db.updateDocument(db_id, collection_id, doc_id, new_det)
+            messages.success(request, 'Data Updated Successfully' if res else 'Update failed')
+            updateSite()
+        else:
+            print(form.errors)
+
+    # --- Add form ---
+    if 'add' in request.POST:
+        attr_list = cache.get(f'attr_list_{collection_id}') or db.getAttribute(db_id, collection_id)
+        cache.set(f'attr_list_{collection_id}', attr_list, None)
+        data["attr_list"] = attr_list
+        data["form"] = YourForm(attr_list=attr_list)
+        return render(request, 'docadd.html', data)
+
+    # --- Delete ---
+    if 'delete' in request.POST:
+        doc_id = request.POST.get('delete')
+        img_list = request.POST.getlist(f'img_{doc_id}[]')
+        res = all(db.deleteStorage(os.getenv('STORAGE_ID'), each) for each in img_list)
+        if res:
+            res = db.deleteDocument(db_id, collection_id, doc_id)
+        messages.success(request, 'Data Deleted Successfully' if res else 'Delete failed')
+        updateSite()
+
+    # --- Edit ---
+    if 'edit' in request.POST:
+        doc_id = request.POST.get('edit')
+        data_dict = ast.literal_eval(request.POST.get(f"data_{doc_id}"))
+        attr_list = cache.get(f'attr_list_{collection_id}') or db.getAttribute(db_id, collection_id)
+        cache.set(f'attr_list_{collection_id}', attr_list, None)
+        form = YourForm(attr_list=attr_list, default_data=data_dict)
+        data.update({
+            "attr_list": attr_list,
+            "form": form,
+            "doc_id": doc_id,
+            "data_dict": data_dict
+        })
+        return render(request, 'docedit.html', data)
+
+    # --- Default ---
+    queries = [
+            Query.limit(limit),
+            Query.offset(0),
+            Query.order_desc("$createdAt"),
+        ]
+    data['data'], attr_list = db.getDocument(db_id, collection_id,queries)
+    cache.set(f'attr_list_{collection_id}', attr_list, None)
+    return render(request, 'documents.html', data)
+
+'''
+def file(request):
+    """
+    Upload a single image file to storage.
+    - Only image/* types
+    - Max 5 MB
+    """
+    if request.method == 'POST':
+        try:
+            uploaded_file = request.FILES.get('upfile')
+            if not uploaded_file:
+                messages.error(request, 'No file uploaded')
+                return render(request, 'file.html')
+
+            if not uploaded_file.content_type.startswith('image/'):
+                messages.error(request, 'Only image uploads are allowed.')
+                return render(request, 'file.html')
+
+            MAX_SIZE = 5 * 1024 * 1024
+            if uploaded_file.size > MAX_SIZE:
+                messages.error(request, 'File too large (max 5MB).')
+                return render(request, 'file.html')
+
+            compressed = compress_image(uploaded_file, quality=60)
+            url = db.addStorage(os.getenv('STORAGE_ID'), compressed.file, compressed.name)
+            if url:
+                return render(request, 'file.html', {'url': url})
+            else:
+                messages.error(request, 'Upload failed.')
+        except Exception as e:
+            print("File upload error:", e)
+            messages.error(request, 'Upload error.')
+    return render(request, 'file.html')
+
+'''

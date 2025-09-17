@@ -23,7 +23,7 @@ client = Client()
 
 (client
  # Setting API Endpoint
- .set_endpoint('https://fra.cloud.appwrite.io/v1')
+ .set_endpoint('https://cloud.appwrite.io/v1')
  # Setting Project ID
  .set_project(os.getenv('PROJECT_ID'))
  # Setting API Key 
@@ -109,10 +109,10 @@ def getDocument(db_id,collection_id,query=None):
             else:
                 value=each_document[column_name]
                 
-            dic[column_name]=value
+            dic[column_name.replace("_"," ")]=value
         doc_list.append(dic)
         
-    return doc_list,attr_lists
+    return doc_list[::-1],attr_lists
 
 
 def deleteDocument(db_id,collection_id,document_id):

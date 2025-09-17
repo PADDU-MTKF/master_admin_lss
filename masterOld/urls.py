@@ -15,19 +15,13 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from django.views.static import serve
-from django.conf import settings
-from django.urls import re_path,include
+from . import views
 
 urlpatterns = [
-    path('', include("master.urls")),
-    path('admin',include('master.urls')),
-    
+    path('', views.login,name='login'),
+    # path('home', views.home,name='home'),
+    # path('collections', views.collections, name='collections'),
+    path('documents', views.documents, name='documents'),
+    path('login', views.login, name='login'),
+    # path('file', views.file, name='file'),
 ]
-
-
-
-urlpatterns.append(re_path(r'^media/(?P<path>.*)$', serve,
-                   {'document_root': settings.MEDIA_ROOT}))
-urlpatterns.append(re_path(r'^static/(?P<path>.*)$', serve,
-                   {'document_root': settings.STATIC_ROOT}))
